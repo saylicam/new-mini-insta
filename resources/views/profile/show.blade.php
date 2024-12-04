@@ -7,7 +7,6 @@
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
-
             <!-- Informations de l'utilisateur -->
             <div class="bg-white shadow sm:rounded-lg p-4">
                 <h3 class="font-semibold">Nom : {{ $user->name }}</h3>
@@ -46,38 +45,54 @@
             <div class="bg-white shadow sm:rounded-lg p-4">
                 <h3 class="font-semibold">Publications</h3>
                 @forelse ($posts as $post)
-                    <div class="p-2 border-b">
+                    <div class="p-4 border-b">
                         <p>{{ $post->content }}</p>
                         @if ($post->image_path)
-                            <img src="{{ asset('storage/' . $post->image_path) }}" alt="Post Image" class="mt-2">
+                            <img src="{{ asset('storage/' . $post->image_path) }}" alt="Post Image" class="mt-2 rounded-lg">
+                        @endif
+
+                        <!-- Bouton Like -->
+                        <form action="{{ route('post.like', $post->id) }}" method="POST" class="mt-2 inline-block">
+                            @csrf
+                            <button type="submit" class="text-blue-500 hover:underline">
+                                {{ $post->likes->count() }} Like{{ $post->likes->count() > 1 ? 's' : '' }}
+                            </button>
+                        </form>
+
+                        <!-- Formulaire Commentaire -->
+                        <div class="mt-4">
+                            <form action="{{ route('post.comment', $post->id) }}" method="POST">
+                                @csrf
+                                <input
+                                    type="text"
+                                    name="content"
+                                    placeholder="Écrire un commentaire..."
+                                    class="w-full border rounded p-2"
+                                    required
+                                >
+                                <button type="submit" class="bg-blue-500 text-white px-4 py-2 mt-2 rounded">
+                                    Commenter
+                                </button>
+                            </form>
+                        </div>
+
+                        <!-- Liste des commentaires -->
+                        @if ($post->comments->count() > 0)
+                            <div class="mt-4">
+                                <h4 class="font-semibold">Commentaires :</h4>
+                                @foreach ($post->comments as $comment)
+                                    <p>
+                                        <strong>{{ $comment->user->name }} :</strong>
+                                        {{ $comment->content }}
+                                    </p>
+                                @endforeach
+                            </div>
                         @endif
                     </div>
                 @empty
                     <p class="text-gray-500">Aucune publication disponible.</p>
                 @endforelse
             </div>
-
-            <!-- Abonnés et abonnements -->
-            <div class="bg-white shadow sm:rounded-lg p-4">
-                <h3 class="font-semibold">Abonnés ({{ $followers->count() }})</h3>
-                <ul>
-                    @forelse ($followers as $follower)
-                        <li>{{ $follower->follower->name }}</li>
-                    @empty
-                        <p class="text-gray-500">Aucun abonné.</p>
-                    @endforelse
-                </ul>
-
-                <h3 class="font-semibold mt-4">Abonnements ({{ $following->count() }})</h3>
-                <ul>
-                    @forelse ($following as $followed)
-                        <li>{{ $followed->followed->name }}</li>
-                    @empty
-                        <p class="text-gray-500">Aucun abonnement.</p>
-                    @endforelse
-                </ul>
-            </div>
-
         </div>
     </div>
 </x-app-layout>
