@@ -5,15 +5,21 @@ use App\Http\Controllers\FeedController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Http\Request;
 
-// Route d'accueil - Redirige vers le fil d'actualité après authentification
+// Route d'accueil - Redirige vers la page d'inscription ou le fil d'actualité
 Route::get('/', function () {
-    return redirect()->route('feed');
-})->middleware('auth');
+    if (auth()->check()) {
+        return redirect()->route('feed'); // Redirige les utilisateurs connectés vers le feed
+    }
+    return redirect()->route('register'); // Redirige les utilisateurs non connectés vers l'inscription
+});
 
-// Tableau de bord - Redirige directement vers le fil d'actualité
+// Tableau de bord - Redirige directement vers le fil d'actualité ou l'inscription
 Route::get('/dashboard', function () {
-    return redirect()->route('feed');
-})->middleware(['auth'])->name('dashboard');
+    if (auth()->check()) {
+        return redirect()->route('feed'); // Redirige les utilisateurs connectés vers le feed
+    }
+    return redirect()->route('register'); // Redirige les utilisateurs non connectés vers l'inscription
+})->name('dashboard');
 
 // Routes nécessitant une authentification
 Route::middleware('auth')->group(function () {
@@ -26,10 +32,10 @@ Route::middleware('auth')->group(function () {
             'image' => 'nullable|image|max:2048', // Validation pour les images
         ]);
 
-        $imagePath = null;
-        if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('images', 'public');
-        }
+        // Vérifie si un fichier est fourni avant de le stocker
+        $imagePath = $request->hasFile('image')
+            ? $request->file('image')->store('images', 'public')
+            : null;
 
         // Création du post
         \App\Models\Post::create([
@@ -45,7 +51,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/posts/{post}/like', [FeedController::class, 'like'])->name('post.like');
     Route::post('/posts/{post}/comment', [FeedController::class, 'comment'])->name('post.comment');
 
-    // Routes pour les profils utilisateurs (ordre optimisé)
+    // Routes pour les profils utilisateurs
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit'); // Modifier son propre profil
     Route::patch('/profile/update', [ProfileController::class, 'update'])->name('profile.update'); // Mettre à jour son propre profil
     Route::get('/profile/{user}', [ProfileController::class, 'show'])->name('profile.show'); // Voir un profil public
