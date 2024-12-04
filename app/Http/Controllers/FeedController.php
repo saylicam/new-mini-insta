@@ -11,8 +11,22 @@ class FeedController extends Controller
 {
     public function index()
     {
-        // Charger les posts avec les relations user, likes et comments
-        $posts = Post::with('user', 'likes', 'comments.user')->latest()->get();
+        $currentUser = auth()->user();
+
+        // Récupérer les IDs des utilisateurs suivis par l'utilisateur connecté
+        $followedUserIds = $currentUser->following->pluck('followed_id')->toArray();
+
+        // Inclure également les posts de l'utilisateur lui-même
+        $followedUserIds[] = $currentUser->id;
+
+        // Charger les posts des utilisateurs suivis, triés par nombre de likes et date
+        $posts = Post::with('user', 'likes', 'comments.user')
+            ->withCount('likes') // Compter les likes pour chaque post
+            ->whereIn('user_id', $followedUserIds) // Récupérer uniquement les posts des utilisateurs suivis
+            ->orderBy('likes_count', 'desc') // Trier par nombre de likes décroissant
+            ->latest('created_at') // Trier par date en cas d'égalité
+            ->get();
+
         return view('feed', compact('posts'));
     }
 
